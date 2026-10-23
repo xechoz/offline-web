@@ -1,0 +1,19 @@
+{
+  "name": "offline-web-demo-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Minimal packaging and publishing server for offline-web-core.",
+  "scripts": {
+    "start": "node index.mjs",
+    "test": "node --test test/*.test.mjs",
+    "gen-keys": "node scripts/gen-keys.mjs",
+    "gen-fixture": "node scripts/gen-fixture.mjs"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.16",
+    "archiver": "^7.0.1",
+    "cheerio": "^1.1.2",
+    "express": "^5.1.0"
+  }
+}

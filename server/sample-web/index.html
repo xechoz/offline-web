@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Offline Shop</title>
+  <link rel="icon" href="logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <img class="logo" src="logo.svg" alt="Offline Shop logo">
+    <div>
+      <div class="eyebrow">OFFLINE WEB DEMO</div>
+      <h1>离线商店</h1>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <span class="badge">LOCAL</span>
+      <h2>断网也能打开</h2>
+      <p>这个页面、样式、脚本、图片和 JSON 数据都来自本地离线包。</p>
+      <p class="status" id="status">正在读取本地数据…</p>
+    </section>
+
+    <section>
+      <h2>今日推荐</h2>
+      <div class="grid" id="cards"></div>
+    </section>
+  </main>
+
+  <footer>
+    <span>sample-web</span>
+    <span id="build">build 1</span>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

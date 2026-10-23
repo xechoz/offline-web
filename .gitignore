@@ -1,0 +1,10 @@
+.gradle/
+build/
+local.properties
+.idea/
+*.iml
+server/data/
+server/node_modules/
+demo-android/build/
+core/build/
+.kotlin/

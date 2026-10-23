@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "keyId": "demo-2026-01",
+  "appKey": "fixture",
+  "packageId": "fixture",
+  "version": 1,
+  "versionName": "fixture-1",
+  "createdAt": 1790000000000,
+  "expiresAt": null,
+  "minClientVersion": 1,
+  "entryUrl": "http://fixture.local/app/",
+  "archive": {
+    "url": "site.zip",
+    "size": 805,
+    "sha256": "126495c6389bb79ee6bdf9a44bb4bdff4f5c89f1b0ec5ad106ad261b293af790"
+  },
+  "routes": [
+    {
+      "origin": "http://fixture.local",
+      "basePath": "/app/",
+      "spaFallback": true
+    }
+  ],
+  "files": [
+    {
+      "path": "app.js",
+      "size": 148,
+      "sha256": "59b83ac198cbab0193b046d457a4d0b12ed4002078f21ff791fe19302a4653bf"
+    },
+    {
+      "path": "data.json",
+      "size": 42,
+      "sha256": "414e626893bfd6404304b0e7a943af53561497abc367f1be364881fbd7ed853b"
+    },
+    {
+      "path": "index.html",
+      "size": 256,
+      "sha256": "2a10939186fa3c370033d0aff865488500b778859d309d0e540613cd7cb88adb"
+    },
+    {
+      "path": "style.css",
+      "size": 102,
+      "sha256": "a087ca2e90f4884711d7b233dfc51277edaf4d448ccb22d8bf618664c628f4c3"
+    }
+  ]
+}

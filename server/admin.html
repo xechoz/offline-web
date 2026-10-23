@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Offline Web Admin</title>
+  <style>
+    :root { color-scheme: dark; --bg:#0f1412; --panel:#17201d; --line:#2b3a34; --ink:#e8f0ec; --muted:#8fa39a; --brand:#4fd1a5; --danger:#ff8b8b; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.5 ui-sans-serif,system-ui,sans-serif; }
+    header { padding:18px 22px; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; }
+    h1 { margin:0; font-size:18px; }
+    main { width:min(1180px,calc(100% - 32px)); margin:20px auto 60px; display:grid; grid-template-columns:repeat(auto-fit,minmax(340px,1fr)); gap:16px; }
+    section { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px; }
+    section.wide { grid-column:1/-1; }
+    h2 { margin:0 0 12px; font-size:14px; color:var(--brand); letter-spacing:.04em; }
+    label { display:block; margin:8px 0 4px; color:var(--muted); font-size:12px; }
+    input,select,button { font:inherit; }
+    input,select { width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--line); background:#0c1210; color:var(--ink); }
+    button { margin-top:10px; padding:8px 12px; border-radius:8px; border:1px solid var(--line); background:#20342d; color:var(--ink); cursor:pointer; }
+    button:hover { border-color:var(--brand); }
+    button.danger { color:var(--danger); }
+    .row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .log { max-height:220px; overflow:auto; white-space:pre-wrap; font:12px/1.6 ui-monospace,monospace; color:var(--muted); background:#0b100e; border:1px solid var(--line); border-radius:8px; padding:10px; margin-top:10px; }
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    th,td { text-align:left; padding:8px 6px; border-bottom:1px solid var(--line); vertical-align:top; }
+    th { color:var(--muted); font-weight:600; }
+    .tag { display:inline-block; padding:2px 7px; border-radius:999px; background:#20342d; color:var(--brand); font-size:11px; }
+    .tag.revoked { color:var(--danger); background:#3a2222; }
+    .muted { color:var(--muted); }
+    code { color:var(--brand); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Offline Web Admin</h1>
+    <div class="row" style="width:360px">
+      <input id="token" type="password" placeholder="admin token" value="demo-admin">
+      <button onclick="refresh()">刷新</button>
+    </div>
+  </header>
+
+  <main>
+    <section>
+      <h2>创建应用</h2>
+      <label>appKey</label><input id="appKey" placeholder="demo">
+      <label>名称</label><input id="appName" placeholder="Demo App">
+      <button onclick="createApp()">创建应用</button>
+    </section>
+
+    <section>
+      <h2>创建包</h2>
+      <label>所属 appKey</label><input id="pkgAppKey" placeholder="demo">
+      <label>packageId</label><input id="packageId" placeholder="shop">
+      <label>名称</label><input id="packageName" placeholder="Shop">
+      <label>客户端访问 URL（entryUrl）</label><input id="entryUrl" placeholder="http://10.0.2.2:8080/site/">
+      <label><input id="spaFallback" type="checkbox" style="width:auto"> 启用 SPA fallback</label>
+      <button onclick="createPackage()">创建包</button>
+    </section>
+
+    <section class="wide">
+      <h2>发布</h2>
+      <div class="row">
+        <div>
+          <label>包</label>
+          <select id="deployPkg"></select>
+          <label>抓取 URL（服务端访问）</label>
+          <input id="sourceUrl" value="http://127.0.0.1:8080/site/">
+          <label>版本名（可选）</label>
+          <input id="versionName" placeholder="1.0.1">
+          <label>过期时间（可选）</label>
+          <input id="expiresAt" type="datetime-local">
+          <button onclick="deployUrl()">URL 抓取并发布</button>
+          <button onclick="deploySample()">直接发布 sample-web</button>
+        </div>
+        <div>
+          <label>上传 zip（zip 根目录 = web 根目录）</label>
+          <input id="zipFile" type="file" accept=".zip,application/zip">
+          <button onclick="deployZip()">上传并发布</button>
+          <div class="log" id="log">ready</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wide">
+      <h2>状态</h2>
+      <div id="state" class="muted">loading…</div>
+    </section>
+
+    <section class="wide">
+      <h2>Release 列表</h2>
+      <div style="overflow:auto">
+        <table>
+          <thead><tr><th>包</th><th>版本</th><th>名称</th><th>状态</th><th>文件</th><th>体积</th><th>创建时间</th><th>操作</th></tr></thead>
+          <tbody id="releases"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id)
+    const log = (message) => {
+      $('log').textContent = `${new Date().toLocaleTimeString()} ${message}\n` + $('log').textContent
+    }
+
+    async function api(path, options = {}) {
+      const response = await fetch(path, {
+        ...options,
+        headers: {
+          'x-admin-token': $('token').value,
+          ...(options.body instanceof Blob || typeof options.body === 'string' ? {} : {}),
+          ...(options.headers || {}),
+        },
+      })
+      const text = await response.text()
+      let body
+      try { body = text ? JSON.parse(text) : null } catch { body = text }
+      if (!response.ok) throw new Error(`${response.status} ${JSON.stringify(body)}`)
+      return body
+    }
+
+    async function refresh() {
+      try {
+        const state = await api('/admin/api/state')
+        const packages = Object.entries(state.packages)
+        $('deployPkg').innerHTML = packages
+          .map(([id, pkg]) => `<option value="${id}">${id} · ${pkg.name}</option>`)
+          .join('')
+        $('state').innerHTML = `<pre>${escapeHtml(JSON.stringify(state, null, 2))}</pre>`
+        const rows = []
+        for (const [packageId, releases] of Object.entries(state.releases)) {
+          for (const release of releases) {
+            rows.push(`<tr>
+              <td><code>${packageId}</code></td>
+              <td>${release.version}</td>
+              <td>${escapeHtml(release.versionName || '')}</td>
+              <td><span class="tag ${release.status === 'revoked' ? 'revoked' : ''}">${release.status}</span></td>
+              <td>${release.fileCount ?? ''}</td>
+              <td>${release.size ? (release.size / 1024).toFixed(1) + ' KB' : ''}</td>
+              <td>${new Date(release.createdAt).toLocaleString()}</td>
+              <td>
+                <button class="danger" onclick="revoke('${packageId}', ${release.version})">撤销</button>
+                <button onclick="rollback('${packageId}', ${release.version})">回滚</button>
+              </td>
+            </tr>`)
+          }
+        }
+        $('releases').innerHTML = rows.join('') || '<tr><td colspan="8" class="muted">暂无 release</td></tr>'
+        log('state refreshed')
+      } catch (error) {
+        log(`refresh failed: ${error.message}`)
+      }
+    }
+
+    async function createApp() {
+      try {
+        await api('/admin/api/apps', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ appKey: $('appKey').value.trim(), name: $('appName').value.trim() }),
+        })
+        log('app created')
+        await refresh()
+      } catch (error) { log(`create app failed: ${error.message}`) }
+    }
+
+    async function createPackage() {
+      try {
+        await api(`/admin/api/apps/${encodeURIComponent($('pkgAppKey').value.trim())}/packages`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            packageId: $('packageId').value.trim(),
+            name: $('packageName').value.trim(),
+            entryUrl: $('entryUrl').value.trim(),
+            spaFallback: $('spaFallback').checked,
+          }),
+        })
+        log('package created')
+        await refresh()
+      } catch (error) { log(`create package failed: ${error.message}`) }
+    }
+
+    async function deployUrl() {
+      try {
+        const result = await api(`/admin/api/packages/${encodeURIComponent($('deployPkg').value)}/deploy`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            sourceUrl: $('sourceUrl').value.trim(),
+            versionName: $('versionName').value.trim() || undefined,
+            expiresAt: $('expiresAt').value ? new Date($('expiresAt').value).getTime() : undefined,
+          }),
+        })
+        log(`deployed v${result.version} (${result.fileCount} files)`)
+        await refresh()
+      } catch (error) { log(`deploy failed: ${error.message}`) }
+    }
+
+    async function deploySample() {
+      try {
+        const result = await api(`/admin/api/packages/${encodeURIComponent($('deployPkg').value)}/deploy-sample`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ versionName: $('versionName').value.trim() || undefined }),
+        })
+        log(`sample deployed v${result.version} (${result.fileCount} files)`)
+        await refresh()
+      } catch (error) { log(`sample deploy failed: ${error.message}`) }
+    }
+
+    async function deployZip() {
+      const file = $('zipFile').files[0]
+      if (!file) return log('choose a zip first')
+      try {
+        const query = new URLSearchParams()
+        if ($('versionName').value.trim()) query.set('versionName', $('versionName').value.trim())
+        if ($('expiresAt').value) query.set('expiresAt', String(new Date($('expiresAt').value).getTime()))
+        const suffix = query.size ? `?${query}` : ''
+        const result = await api(`/admin/api/packages/${encodeURIComponent($('deployPkg').value)}/deploy-zip${suffix}`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/zip' },
+          body: file,
+        })
+        log(`zip deployed v${result.version} (${result.fileCount} files)`)
+        await refresh()
+      } catch (error) { log(`zip deploy failed: ${error.message}`) }
+    }
+
+    async function revoke(packageId, version) {
+      if (!confirm(`撤销 ${packageId} v${version}?`)) return
+      try {
+        await api(`/admin/api/releases/${encodeURIComponent(packageId)}/${version}/revoke`, { method: 'POST' })
+        log(`revoked ${packageId} v${version}`)
+        await refresh()
+      } catch (error) { log(`revoke failed: ${error.message}`) }
+    }
+
+    async function rollback(packageId, version) {
+      try {
+        const result = await api(`/admin/api/releases/${encodeURIComponent(packageId)}/${version}/rollback`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({}),
+        })
+        log(`rolled back ${packageId} as v${result.version}`)
+        await refresh()
+      } catch (error) { log(`rollback failed: ${error.message}`) }
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]))
+    }
+
+    refresh()
+  </script>
+</body>
+</html>
