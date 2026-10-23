@@ -8,3 +8,5 @@ server/node_modules/
 demo-android/build/
 core/build/
 .kotlin/
+
+gradle/gradle-daemon-jvm.properties
