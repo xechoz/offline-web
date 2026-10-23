@@ -2,7 +2,7 @@
 
 > 状态：已定稿，进入实施。
 > 平台：Android（Kotlin + Compose demo）；示例服务端：Node.js。
-> 坐标：`io.github.xechoz:offline-web-core:0.1.0`，Apache-2.0。
+> 坐标：`io.github.xechoz:offline-web-core:0.1.1`，Apache-2.0。
 
 ## 1. 目标与范围
 
@@ -482,9 +482,9 @@ Screen 级 composable 均配 `@Preview`，使用纯 mock 状态，不依赖 View
 
 ### 9.1 Maven
 
-- 坐标：`io.github.xechoz:offline-web-core:0.1.0`，Apache-2.0。
-- `maven-publish` + release variant + sources jar。
-- 先 `./gradlew publishToMavenLocal` 验证 demo 依赖；Maven Central 通过 CI + GPG 签名发布。
+- 坐标：`io.github.xechoz:offline-web-core:0.1.1`，Apache-2.0。
+- Vanniktech maven publish + release variant + sources/javadoc jar。
+- `publishToMavenLocal` 本地验证；`publishToMavenCentral` 通过 GPG 签名发布，版本不可覆盖。
 - POM 包含 name/description/url/license/developer/scm。
 - `consumer-rules.pro` 处理 kotlinx.serialization / 反射；release demo 跑 R8。
 - 低版本兼容：时间用 epoch millis；Base64 用 Okio，避免 `java.util.Base64` 的 API 26 限制。
