@@ -1,8 +1,18 @@
 # Changelog
 
+## 0.1.1
+
+- 将 `kotlinx-coroutines-android` 从 `implementation` 改为 `api`。
+- 修复消费方编译时无法访问 `StateFlow` / `SharedFlow` 的问题。
+- 0.1.0 的 POM 将 coroutines 标为 runtime scope，请直接使用 0.1.1。
+
+```kotlin
+implementation("io.github.xechoz:offline-web-core:0.1.1")
+```
+
 ## 0.1.0
 
-首个可用版本。
+首个发布到 Maven Central 的版本。存在 coroutines 依赖 scope 问题，已被 0.1.1 取代。
 
 ### core
 

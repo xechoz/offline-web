@@ -1,5 +1,7 @@
 # Offline Web
 
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.xechoz/offline-web-core)](https://central.sonatype.com/artifact/io.github.xechoz/offline-web-core)
+
 一个面向 Android WebView 的离线 Web 资源库：服务端把站点打包成签名离线包，客户端下载、校验、解压后，通过 `WebViewClient.shouldInterceptRequest` 透明地把请求映射到本地文件。业务代码只需要多写一行 `initOfflineResource(...)`。
 
 本仓库同时包含：
@@ -76,19 +78,20 @@ adb shell pm clear io.github.xechoz.offlineweb.demo
 
 ### 依赖
 
+已发布到 Maven Central：
+
 ```kotlin
 repositories {
-    mavenLocal()
     google()
     mavenCentral()
 }
 
 dependencies {
-    implementation("io.github.xechoz:offline-web-core:0.1.0")
+    implementation("io.github.xechoz:offline-web-core:0.1.1")
 }
 ```
 
-本地验证发布：
+本地开发验证可先发布到 `mavenLocal()`：
 
 ```bash
 ./gradlew :core:publishToMavenLocal
@@ -236,8 +239,13 @@ export ANDROID_HOME=/path/to/Android/Sdk
 ./gradlew :demo-android:assembleDebug
 ./gradlew :core:publishToMavenLocal
 
+# 发布到 Maven Central（需要 Central 凭据与 GPG key）
+./gradlew :core:publishToMavenCentral
+
 cd server && npm ci && npm test
 ```
+
+发布流程和凭据说明见 [docs/releasing.md](docs/releasing.md)。
 
 契约测试：
 

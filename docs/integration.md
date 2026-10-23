@@ -3,12 +3,17 @@
 ## 1. 依赖
 
 ```kotlin
+repositories {
+    google()
+    mavenCentral()
+}
+
 dependencies {
-    implementation("io.github.xechoz:offline-web-core:0.1.0")
+    implementation("io.github.xechoz:offline-web-core:0.1.1")
 }
 ```
 
-本地发布：
+库已发布到 Maven Central。本地开发验证可执行：
 
 ```bash
 ./gradlew :core:publishToMavenLocal
